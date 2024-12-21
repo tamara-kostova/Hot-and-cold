@@ -140,8 +140,43 @@ def spread_tiles(grid):
                             new_grid[ny][nx] = WATER
     return new_grid
 
+# Welcome screen
+def welcome_screen():
+    screen.fill(WHITE)
+    font = pygame.font.Font(None, 36)
+
+    instructions = [
+        "Welcome to Duck Board Game!",
+        "Instructions:",
+        "1. Use arrow keys to move the duck.",
+        "2. Collect all collectibles to unlock the portal.",
+        "3. Avoid lava or you'll lose!",
+        "4. Push boxes to block lava or cover timed tiles.",
+        "5. Water spreads but is safe to swim on.",
+        "6. Use power-ups to survive!",
+        "Press any key to start."
+    ]
+
+    y_offset = 100
+    for line in instructions:
+        text = font.render(line, True, BLACK)
+        screen.blit(text, (50, y_offset))
+        y_offset += 40
+
+    pygame.display.flip()
+
+    waiting = True
+    while waiting:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                exit()
+            if event.type == pygame.KEYDOWN:
+                waiting = False
+
 # Main game loop
 def main():
+    welcome_screen()
     level_index = 0
     grid = LEVELS[level_index]
     duck_pos = [1, 1]
