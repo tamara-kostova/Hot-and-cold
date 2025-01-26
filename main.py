@@ -8,24 +8,16 @@ TILE_SIZE = 70
 GRID_WIDTH = 16
 GRID_HEIGHT = 10
 
-SCREEN_WIDTH = 1024
-SCREEN_HEIGHT = 768
+SCREEN_WIDTH = 1200
+SCREEN_HEIGHT = 800
 
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 RED = (255, 0, 0)
 GREEN = (0, 255, 0)
 
-
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Duck Board Game")
-
-
-GRID_PIXEL_WIDTH = GRID_WIDTH * TILE_SIZE
-GRID_PIXEL_HEIGHT = GRID_HEIGHT * TILE_SIZE
-GRID_OFFSET_X = (SCREEN_WIDTH - GRID_PIXEL_WIDTH) // 2
-GRID_OFFSET_Y = (SCREEN_HEIGHT - GRID_PIXEL_HEIGHT) // 2
-
 
 ASSETS_DIR = "assets"
 
@@ -46,7 +38,6 @@ IMMUNITY_IMG = pygame.image.load(
 ).convert_alpha()
 TIMER_IMG = pygame.image.load(os.path.join(ASSETS_DIR, "timer.png")).convert_alpha()
 
-
 LAVA_IMG = pygame.transform.scale(LAVA_IMG, (TILE_SIZE, TILE_SIZE))
 WATER_IMG = pygame.transform.scale(WATER_IMG, (TILE_SIZE, TILE_SIZE))
 WALL_IMG = pygame.transform.scale(WALL_IMG, (TILE_SIZE, TILE_SIZE))
@@ -58,7 +49,6 @@ PORTAL_IMG = pygame.transform.scale(PORTAL_IMG, (TILE_SIZE, TILE_SIZE))
 COLLECTIBLE_IMG = pygame.transform.scale(COLLECTIBLE_IMG, (TILE_SIZE, TILE_SIZE))
 IMMUNITY_IMG = pygame.transform.scale(IMMUNITY_IMG, (TILE_SIZE, TILE_SIZE))
 TIMER_IMG = pygame.transform.scale(TIMER_IMG, (TILE_SIZE, TILE_SIZE))
-
 
 clock = pygame.time.Clock()
 FPS = 60
@@ -129,6 +119,9 @@ TIMER = 10
 
 timers = {}
 immunity_moves = 0
+
+
+undo_stack = []
 
 
 def draw_grid(grid):
@@ -259,6 +252,7 @@ def welcome_screen():
         "4. Push boxes to block lava or cover timed tiles.",
         "5. Water spreads but is safe to swim on.",
         "6. Use power-ups to survive!",
+        "7. Press 'U' to undo your last move.",
         "Press any key to start.",
     ]
 
@@ -291,16 +285,29 @@ def display_message(message, color):
 
 
 def reset_level(level_index):
-    global timers, immunity_moves
+    global timers, immunity_moves, undo_stack
     grid = [row[:] for row in LEVELS[level_index]]
     duck_pos = [1, 1]
     timers = {}
     immunity_moves = 0
+    undo_stack = []
     return grid, duck_pos
 
 
+def save_state(grid, duck_pos):
+    global undo_stack
+
+    undo_stack.append(([row[:] for row in grid], [duck_pos[0], duck_pos[1]]))
+
+
+def undo_move():
+    global grid, duck_pos, undo_stack
+    if undo_stack:
+        grid, duck_pos = undo_stack.pop()
+
+
 def main():
-    global timers, immunity_moves
+    global grid, duck_pos, timers, immunity_moves, undo_stack
     welcome_screen()
     level_index = 0
     grid, duck_pos = reset_level(level_index)
@@ -313,74 +320,83 @@ def main():
                 running = False
 
             if event.type == pygame.KEYDOWN:
-                dx, dy = 0, 0
-                if event.key == pygame.K_UP:
-                    dy = -1
-                elif event.key == pygame.K_DOWN:
-                    dy = 1
-                elif event.key == pygame.K_LEFT:
-                    dx = -1
-                elif event.key == pygame.K_RIGHT:
-                    dx = 1
+                if event.key == pygame.K_u:
+                    undo_move()
+                else:
+                    dx, dy = 0, 0
+                    if event.key == pygame.K_UP:
+                        dy = -1
+                    elif event.key == pygame.K_DOWN:
+                        dy = 1
+                    elif event.key == pygame.K_LEFT:
+                        dx = -1
+                    elif event.key == pygame.K_RIGHT:
+                        dx = 1
 
-                new_pos = [duck_pos[0] + dx, duck_pos[1] + dy]
-                if 0 <= new_pos[0] < len(grid[0]) and 0 <= new_pos[1] < len(grid):
-                    target_tile = grid[new_pos[1]][new_pos[0]]
-                    if target_tile == LAVA and immunity_moves == 0:
-                        display_message("You Died! Retrying level...", RED)
-                        grid, duck_pos = reset_level(level_index)
-                    elif target_tile in [EMPTY, WATER, IMMUNITY]:
-                        duck_pos = new_pos
-                        if target_tile == IMMUNITY:
-                            immunity_moves = random.randint(3, 7)
-                            grid[new_pos[1]][new_pos[0]] = EMPTY
-                    elif target_tile in [EMPTY, WATER, IMMUNITY] or (
-                        target_tile == LAVA and immunity_moves > 0
-                    ):
-                        duck_pos = new_pos
-                    elif target_tile == ICE:
-                        while True:
-                            new_pos[0] += dx
-                            new_pos[1] += dy
-                            if not (
-                                0 <= new_pos[0] < len(grid[0])
-                                and 0 <= new_pos[1] < len(grid)
-                            ):
-                                break
-                            if grid[new_pos[1]][new_pos[0]] != ICE:
-                                if grid[new_pos[1]][new_pos[0]] == LAVA:
-                                    display_message("You Died! Retrying level...", RED)
-                                    grid, duck_pos = reset_level(level_index)
-                                duck_pos = new_pos
-                                break
-                    elif target_tile == COLLECTIBLE:
-                        duck_pos = new_pos
-                        grid[new_pos[1]][new_pos[0]] = EMPTY
-                    elif target_tile == BOX:
-                        box_new_pos = [new_pos[0] + dx, new_pos[1] + dy]
-                        if (
-                            0 <= box_new_pos[0] < len(grid[0])
-                            and 0 <= box_new_pos[1] < len(grid)
-                            and grid[box_new_pos[1]][box_new_pos[0]]
-                            in [EMPTY, WATER, LAVA, TIMER]
-                        ):
-                            grid[box_new_pos[1]][box_new_pos[0]] = BOX
-                            grid[new_pos[1]][new_pos[0]] = EMPTY
+                    previous_grid = [row[:] for row in grid]
+                    previous_duck_pos = [duck_pos[0], duck_pos[1]]
+
+                    new_pos = [duck_pos[0] + dx, duck_pos[1] + dy]
+                    if 0 <= new_pos[0] < len(grid[0]) and 0 <= new_pos[1] < len(grid):
+                        target_tile = grid[new_pos[1]][new_pos[0]]
+                        if target_tile == LAVA and immunity_moves == 0:
+                            display_message("You Died! Retrying...", RED)
+                            grid, duck_pos = reset_level(level_index)
+                        elif target_tile in [EMPTY, WATER, IMMUNITY]:
                             duck_pos = new_pos
-                    elif target_tile == PORTAL:
-                        if not any(COLLECTIBLE in row for row in grid):
-                            level_index += 1
-                            if level_index < len(LEVELS):
-                                grid, duck_pos = reset_level(level_index)
-                            else:
-                                display_message("You Win!", GREEN)
-                                running = False
+                            if target_tile == IMMUNITY:
+                                immunity_moves = random.randint(3, 7)
+                                grid[new_pos[1]][new_pos[0]] = EMPTY
+                        elif target_tile in [EMPTY, WATER, IMMUNITY] or (
+                            target_tile == LAVA and immunity_moves > 0
+                        ):
+                            duck_pos = new_pos
+                        elif target_tile == ICE:
+                            while True:
+                                new_pos[0] += dx
+                                new_pos[1] += dy
+                                if not (
+                                    0 <= new_pos[0] < len(grid[0])
+                                    and 0 <= new_pos[1] < len(grid)
+                                ):
+                                    break
+                                if grid[new_pos[1]][new_pos[0]] != ICE:
+                                    if grid[new_pos[1]][new_pos[0]] == LAVA:
+                                        display_message("You Died! Retrying...", RED)
+                                        grid, duck_pos = reset_level(level_index)
+                                    duck_pos = new_pos
+                                    break
+                        elif target_tile == COLLECTIBLE:
+                            duck_pos = new_pos
+                            grid[new_pos[1]][new_pos[0]] = EMPTY
+                        elif target_tile == BOX:
+                            box_new_pos = [new_pos[0] + dx, new_pos[1] + dy]
+                            if (
+                                0 <= box_new_pos[0] < len(grid[0])
+                                and 0 <= box_new_pos[1] < len(grid)
+                                and grid[box_new_pos[1]][box_new_pos[0]]
+                                in [EMPTY, WATER, LAVA, TIMER]
+                            ):
+                                grid[box_new_pos[1]][box_new_pos[0]] = BOX
+                                grid[new_pos[1]][new_pos[0]] = EMPTY
+                                duck_pos = new_pos
+                        elif target_tile == PORTAL:
+                            if not any(COLLECTIBLE in row for row in grid):
+                                level_index += 1
+                                if level_index < len(LEVELS):
+                                    grid, duck_pos = reset_level(level_index)
+                                else:
+                                    display_message("You Win!", GREEN)
+                                    running = False
 
-                grid = spread_tiles(grid)
-                update_timers(grid)
-                if not is_duck_valid(grid, duck_pos):
-                    display_message("You Died! Retrying level...", RED)
-                    grid, duck_pos = reset_level(level_index)
+                    if grid != previous_grid or duck_pos != previous_duck_pos:
+                        save_state(previous_grid, previous_duck_pos)
+                        grid = spread_tiles(grid)
+
+                    update_timers(grid)
+                    if not is_duck_valid(grid, duck_pos):
+                        display_message("You Died! Retrying...", RED)
+                        grid, duck_pos = reset_level(level_index)
 
         draw_grid(grid)
 
