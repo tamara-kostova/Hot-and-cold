@@ -1,32 +1,45 @@
+import random
 import pygame
 import os
 
 pygame.init()
 
-SCREEN_WIDTH, SCREEN_HEIGHT = 1000, 800
 TILE_SIZE = 70
+GRID_WIDTH = 16
+GRID_HEIGHT = 10
+
+SCREEN_WIDTH = GRID_WIDTH * TILE_SIZE
+SCREEN_HEIGHT = GRID_HEIGHT * TILE_SIZE
 
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 RED = (255, 0, 0)
 GREEN = (0, 255, 0)
 
+
+screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+pygame.display.set_caption("Duck Board Game")
+
+
 ASSETS_DIR = "assets"
 
-LAVA_IMG = pygame.image.load(os.path.join(ASSETS_DIR, "lava.png"))
-WATER_IMG = pygame.image.load(os.path.join(ASSETS_DIR, "water.png"))
-WALL_IMG = pygame.image.load(os.path.join(ASSETS_DIR, "wall.png"))
-EMPTY_IMG = pygame.image.load(os.path.join(ASSETS_DIR, "empty.png"))
-DUCK_IMG = pygame.image.load(os.path.join(ASSETS_DIR, "duck.png"))
-ICE_IMG = pygame.image.load(os.path.join(ASSETS_DIR, "ice.png"))
-BOX_IMG = pygame.image.load(os.path.join(ASSETS_DIR, "box.png"))
-PORTAL_IMG = pygame.image.load(os.path.join(ASSETS_DIR, "portal.png"))
-COLLECTIBLE_IMG = pygame.image.load(os.path.join(ASSETS_DIR, "collectible.png"))
-IMMUNITY_IMG = pygame.image.load(os.path.join(ASSETS_DIR, "immunity.png"))
-LAVA_STOP_IMG = pygame.image.load(os.path.join(ASSETS_DIR, "lava_stop.png"))
-TIMER_IMG = pygame.image.load(
-    os.path.join(ASSETS_DIR, "timer.png")
-)
+
+LAVA_IMG = pygame.image.load(os.path.join(ASSETS_DIR, "lava.png")).convert_alpha()
+WATER_IMG = pygame.image.load(os.path.join(ASSETS_DIR, "water.png")).convert_alpha()
+WALL_IMG = pygame.image.load(os.path.join(ASSETS_DIR, "wall.png")).convert_alpha()
+EMPTY_IMG = pygame.image.load(os.path.join(ASSETS_DIR, "empty.png")).convert_alpha()
+DUCK_IMG = pygame.image.load(os.path.join(ASSETS_DIR, "duck.png")).convert_alpha()
+ICE_IMG = pygame.image.load(os.path.join(ASSETS_DIR, "ice.png")).convert_alpha()
+BOX_IMG = pygame.image.load(os.path.join(ASSETS_DIR, "box.png")).convert_alpha()
+PORTAL_IMG = pygame.image.load(os.path.join(ASSETS_DIR, "portal.png")).convert_alpha()
+COLLECTIBLE_IMG = pygame.image.load(
+    os.path.join(ASSETS_DIR, "collectible.png")
+).convert_alpha()
+IMMUNITY_IMG = pygame.image.load(
+    os.path.join(ASSETS_DIR, "immunity.png")
+).convert_alpha()
+TIMER_IMG = pygame.image.load(os.path.join(ASSETS_DIR, "timer.png")).convert_alpha()
+
 
 LAVA_IMG = pygame.transform.scale(LAVA_IMG, (TILE_SIZE, TILE_SIZE))
 WATER_IMG = pygame.transform.scale(WATER_IMG, (TILE_SIZE, TILE_SIZE))
@@ -38,17 +51,11 @@ BOX_IMG = pygame.transform.scale(BOX_IMG, (TILE_SIZE, TILE_SIZE))
 PORTAL_IMG = pygame.transform.scale(PORTAL_IMG, (TILE_SIZE, TILE_SIZE))
 COLLECTIBLE_IMG = pygame.transform.scale(COLLECTIBLE_IMG, (TILE_SIZE, TILE_SIZE))
 IMMUNITY_IMG = pygame.transform.scale(IMMUNITY_IMG, (TILE_SIZE, TILE_SIZE))
-LAVA_STOP_IMG = pygame.transform.scale(LAVA_STOP_IMG, (TILE_SIZE, TILE_SIZE))
 TIMER_IMG = pygame.transform.scale(TIMER_IMG, (TILE_SIZE, TILE_SIZE))
-
-
-screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-pygame.display.set_caption("Duck Board Game")
 
 
 clock = pygame.time.Clock()
 FPS = 60
-
 
 DIRECTIONS = {
     "UP": (0, -1),
@@ -56,7 +63,6 @@ DIRECTIONS = {
     "LEFT": (-1, 0),
     "RIGHT": (1, 0),
 }
-
 
 LEVELS = [
     [
@@ -89,6 +95,18 @@ LEVELS = [
         [3, 0, 0, 0, 0, 0, 0, 0, 0, 7, 7, 0, 0, 3],
         [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
     ],
+    [
+        [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
+        [3, 0, 7, 0, 0, 0, 0, 0, 0, 8, 0, 0, 0, 0, 0, 3],
+        [3, 0, 5, 0, 0, 0, 6, 0, 0, 0, 0, 0, 0, 0, 0, 3],
+        [3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3],
+        [3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3],
+        [3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3],
+        [3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3],
+        [3, 0, 0, 0, 0, 0, 0, 7, 7, 7, 0, 0, 0, 0, 0, 3],
+        [3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 3],
+        [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
+    ],
 ]
 
 EMPTY = 0
@@ -100,12 +118,16 @@ BOX = 5
 PORTAL = 6
 COLLECTIBLE = 7
 IMMUNITY = 8
-LAVA_STOP = 9
-TIMER = 10 
+TIMER = 10
+
 timers = {}
+immunity_moves = 0
 
 
 def draw_grid(grid):
+    for y, row in enumerate(grid):
+        for x in range(len(row)):
+            screen.blit(EMPTY_IMG, (x * TILE_SIZE, y * TILE_SIZE))
     for y, row in enumerate(grid):
         for x, tile in enumerate(row):
             if tile == EMPTY:
@@ -126,8 +148,6 @@ def draw_grid(grid):
                 screen.blit(COLLECTIBLE_IMG, (x * TILE_SIZE, y * TILE_SIZE))
             elif tile == IMMUNITY:
                 screen.blit(IMMUNITY_IMG, (x * TILE_SIZE, y * TILE_SIZE))
-            elif tile == LAVA_STOP:
-                screen.blit(LAVA_STOP_IMG, (x * TILE_SIZE, y * TILE_SIZE))
             elif tile == TIMER:
                 screen.blit(TIMER_IMG, (x * TILE_SIZE, y * TILE_SIZE))
                 if (x, y) in timers:
@@ -135,10 +155,16 @@ def draw_grid(grid):
                     text = font.render(str(timers[(x, y)]), True, BLACK)
                     screen.blit(text, (x * TILE_SIZE + 25, y * TILE_SIZE + 25))
 
+
 def spread_tiles(grid):
+    global immunity_moves
     height = len(grid)
     width = len(grid[0])
     new_grid = [row[:] for row in grid]
+
+    if immunity_moves > 0:
+        immunity_moves -= 1
+        return grid
 
     for y in range(height):
         for x in range(width):
@@ -158,6 +184,7 @@ def spread_tiles(grid):
                             new_grid[ny][nx] = WATER
     return new_grid
 
+
 def update_timers(grid):
     global timers
     for y, row in enumerate(grid):
@@ -173,12 +200,14 @@ def update_timers(grid):
                         grid[y][x] = LAVA
                         del timers[(x, y)]
 
+
 def is_duck_valid(grid, duck_pos):
     x, y = duck_pos
     if 0 <= x < len(grid[0]) and 0 <= y < len(grid):
         tile = grid[y][x]
         return tile not in [LAVA, WALL]
     return False
+
 
 def welcome_screen():
     screen.fill(WHITE)
@@ -193,7 +222,7 @@ def welcome_screen():
         "4. Push boxes to block lava or cover timed tiles.",
         "5. Water spreads but is safe to swim on.",
         "6. Use power-ups to survive!",
-        "Press any key to start."
+        "Press any key to start.",
     ]
 
     y_offset = 100
@@ -213,6 +242,7 @@ def welcome_screen():
             if event.type == pygame.KEYDOWN:
                 waiting = False
 
+
 def display_message(message, color):
     screen.fill(WHITE)
     font = pygame.font.Font(None, 74)
@@ -220,10 +250,11 @@ def display_message(message, color):
     text_rect = text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2))
     screen.blit(text, text_rect)
     pygame.display.flip()
-    pygame.time.wait(2000) 
+    pygame.time.wait(2000)
+
 
 def main():
-    global timers
+    global timers, immunity_moves
     welcome_screen()
     level_index = 0
     grid = [row[:] for row in LEVELS[level_index]]
@@ -232,7 +263,6 @@ def main():
 
     while running:
         screen.fill(BLACK)
-
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
@@ -251,16 +281,26 @@ def main():
                 new_pos = [duck_pos[0] + dx, duck_pos[1] + dy]
                 if 0 <= new_pos[0] < len(grid[0]) and 0 <= new_pos[1] < len(grid):
                     target_tile = grid[new_pos[1]][new_pos[0]]
-                    if target_tile == LAVA:
+                    if target_tile == LAVA and immunity_moves == 0:
                         display_message("Game Over!", RED)
                         running = False
-                    elif target_tile in [EMPTY, WATER, IMMUNITY, LAVA_STOP]:
+                    elif target_tile in [EMPTY, WATER, IMMUNITY]:
+                        duck_pos = new_pos
+                        if target_tile == IMMUNITY:
+                            immunity_moves = random.randint(3, 7)
+                            grid[new_pos[1]][new_pos[0]] = EMPTY
+                    elif target_tile in [EMPTY, WATER, IMMUNITY] or (
+                        target_tile == LAVA and immunity_moves > 0
+                    ):
                         duck_pos = new_pos
                     elif target_tile == ICE:
                         while True:
                             new_pos[0] += dx
                             new_pos[1] += dy
-                            if not (0 <= new_pos[0] < len(grid[0]) and 0 <= new_pos[1] < len(grid)):
+                            if not (
+                                0 <= new_pos[0] < len(grid[0])
+                                and 0 <= new_pos[1] < len(grid)
+                            ):
                                 break
                             if grid[new_pos[1]][new_pos[0]] != ICE:
                                 if grid[new_pos[1]][new_pos[0]] == LAVA:
@@ -276,7 +316,8 @@ def main():
                         if (
                             0 <= box_new_pos[0] < len(grid[0])
                             and 0 <= box_new_pos[1] < len(grid)
-                            and grid[box_new_pos[1]][box_new_pos[0]] in [EMPTY, WATER, LAVA, TIMER]
+                            and grid[box_new_pos[1]][box_new_pos[0]]
+                            in [EMPTY, WATER, LAVA, TIMER]
                         ):
                             grid[box_new_pos[1]][box_new_pos[0]] = BOX
                             grid[new_pos[1]][new_pos[0]] = EMPTY
@@ -300,8 +341,15 @@ def main():
 
         draw_grid(grid)
         screen.blit(DUCK_IMG, (duck_pos[0] * TILE_SIZE, duck_pos[1] * TILE_SIZE))
+
+        if immunity_moves > 0:
+            font = pygame.font.Font(None, 36)
+            text = font.render(f"Immunity: {immunity_moves} moves", True, GREEN)
+            screen.blit(text, (SCREEN_WIDTH - 200, 10))
+
         pygame.display.update()
         clock.tick(FPS)
+
 
 if __name__ == "__main__":
     main()
