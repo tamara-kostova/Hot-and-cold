@@ -8,8 +8,8 @@ TILE_SIZE = 70
 GRID_WIDTH = 16
 GRID_HEIGHT = 10
 
-SCREEN_WIDTH = GRID_WIDTH * TILE_SIZE
-SCREEN_HEIGHT = GRID_HEIGHT * TILE_SIZE
+SCREEN_WIDTH = 1024
+SCREEN_HEIGHT = 768
 
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
@@ -19,6 +19,12 @@ GREEN = (0, 255, 0)
 
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Duck Board Game")
+
+
+GRID_PIXEL_WIDTH = GRID_WIDTH * TILE_SIZE
+GRID_PIXEL_HEIGHT = GRID_HEIGHT * TILE_SIZE
+GRID_OFFSET_X = (SCREEN_WIDTH - GRID_PIXEL_WIDTH) // 2
+GRID_OFFSET_Y = (SCREEN_HEIGHT - GRID_PIXEL_HEIGHT) // 2
 
 
 ASSETS_DIR = "assets"
@@ -101,13 +107,14 @@ LEVELS = [
         [3, 0, 5, 0, 0, 0, 6, 0, 0, 0, 0, 0, 0, 0, 0, 3],
         [3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3],
         [3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3],
-        [3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3],
-        [3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3],
-        [3, 0, 0, 0, 0, 0, 0, 7, 7, 7, 0, 0, 0, 0, 0, 3],
+        [3, 0, 0, 0, 0, 0, 7, 0, 0, 0, 0, 0, 0, 0, 0, 3],
+        [3, 0, 0, 0, 0, 0, 7, 0, 0, 0, 0, 0, 0, 0, 0, 3],
+        [3, 0, 0, 0, 0, 0, 7, 0, 0, 0, 0, 0, 0, 0, 0, 3],
         [3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 3],
         [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
     ],
 ]
+
 
 EMPTY = 0
 LAVA = 1
@@ -125,35 +132,65 @@ immunity_moves = 0
 
 
 def draw_grid(grid):
+    grid_width = len(grid[0]) * TILE_SIZE
+    grid_height = len(grid) * TILE_SIZE
+
+    offset_x = (SCREEN_WIDTH - grid_width) // 2
+    offset_y = (SCREEN_HEIGHT - grid_height) // 2
+
     for y, row in enumerate(grid):
         for x in range(len(row)):
-            screen.blit(EMPTY_IMG, (x * TILE_SIZE, y * TILE_SIZE))
+            screen.blit(EMPTY_IMG, (x * TILE_SIZE + offset_x, y * TILE_SIZE + offset_y))
     for y, row in enumerate(grid):
         for x, tile in enumerate(row):
             if tile == EMPTY:
-                screen.blit(EMPTY_IMG, (x * TILE_SIZE, y * TILE_SIZE))
+                screen.blit(
+                    EMPTY_IMG, (x * TILE_SIZE + offset_x, y * TILE_SIZE + offset_y)
+                )
             elif tile == LAVA:
-                screen.blit(LAVA_IMG, (x * TILE_SIZE, y * TILE_SIZE))
+                screen.blit(
+                    LAVA_IMG, (x * TILE_SIZE + offset_x, y * TILE_SIZE + offset_y)
+                )
             elif tile == WATER:
-                screen.blit(WATER_IMG, (x * TILE_SIZE, y * TILE_SIZE))
+                screen.blit(
+                    WATER_IMG, (x * TILE_SIZE + offset_x, y * TILE_SIZE + offset_y)
+                )
             elif tile == WALL:
-                screen.blit(WALL_IMG, (x * TILE_SIZE, y * TILE_SIZE))
+                screen.blit(
+                    WALL_IMG, (x * TILE_SIZE + offset_x, y * TILE_SIZE + offset_y)
+                )
             elif tile == ICE:
-                screen.blit(ICE_IMG, (x * TILE_SIZE, y * TILE_SIZE))
+                screen.blit(
+                    ICE_IMG, (x * TILE_SIZE + offset_x, y * TILE_SIZE + offset_y)
+                )
             elif tile == BOX:
-                screen.blit(BOX_IMG, (x * TILE_SIZE, y * TILE_SIZE))
+                screen.blit(
+                    BOX_IMG, (x * TILE_SIZE + offset_x, y * TILE_SIZE + offset_y)
+                )
             elif tile == PORTAL:
-                screen.blit(PORTAL_IMG, (x * TILE_SIZE, y * TILE_SIZE))
+                screen.blit(
+                    PORTAL_IMG, (x * TILE_SIZE + offset_x, y * TILE_SIZE + offset_y)
+                )
             elif tile == COLLECTIBLE:
-                screen.blit(COLLECTIBLE_IMG, (x * TILE_SIZE, y * TILE_SIZE))
+                screen.blit(
+                    COLLECTIBLE_IMG,
+                    (x * TILE_SIZE + offset_x, y * TILE_SIZE + offset_y),
+                )
             elif tile == IMMUNITY:
-                screen.blit(IMMUNITY_IMG, (x * TILE_SIZE, y * TILE_SIZE))
+                screen.blit(
+                    IMMUNITY_IMG, (x * TILE_SIZE + offset_x, y * TILE_SIZE + offset_y)
+                )
             elif tile == TIMER:
-                screen.blit(TIMER_IMG, (x * TILE_SIZE, y * TILE_SIZE))
+                screen.blit(
+                    TIMER_IMG, (x * TILE_SIZE + offset_x, y * TILE_SIZE + offset_y)
+                )
                 if (x, y) in timers:
                     font = pygame.font.Font(None, 36)
                     text = font.render(str(timers[(x, y)]), True, BLACK)
-                    screen.blit(text, (x * TILE_SIZE + 25, y * TILE_SIZE + 25))
+                    screen.blit(
+                        text,
+                        (x * TILE_SIZE + offset_x + 25, y * TILE_SIZE + offset_y + 25),
+                    )
 
 
 def spread_tiles(grid):
@@ -253,12 +290,20 @@ def display_message(message, color):
     pygame.time.wait(2000)
 
 
+def reset_level(level_index):
+    global timers, immunity_moves
+    grid = [row[:] for row in LEVELS[level_index]]
+    duck_pos = [1, 1]
+    timers = {}
+    immunity_moves = 0
+    return grid, duck_pos
+
+
 def main():
     global timers, immunity_moves
     welcome_screen()
     level_index = 0
-    grid = [row[:] for row in LEVELS[level_index]]
-    duck_pos = [1, 1]
+    grid, duck_pos = reset_level(level_index)
     running = True
 
     while running:
@@ -282,8 +327,8 @@ def main():
                 if 0 <= new_pos[0] < len(grid[0]) and 0 <= new_pos[1] < len(grid):
                     target_tile = grid[new_pos[1]][new_pos[0]]
                     if target_tile == LAVA and immunity_moves == 0:
-                        display_message("Game Over!", RED)
-                        running = False
+                        display_message("You Died! Retrying level...", RED)
+                        grid, duck_pos = reset_level(level_index)
                     elif target_tile in [EMPTY, WATER, IMMUNITY]:
                         duck_pos = new_pos
                         if target_tile == IMMUNITY:
@@ -304,8 +349,8 @@ def main():
                                 break
                             if grid[new_pos[1]][new_pos[0]] != ICE:
                                 if grid[new_pos[1]][new_pos[0]] == LAVA:
-                                    display_message("Game Over!", RED)
-                                    running = False
+                                    display_message("You Died! Retrying level...", RED)
+                                    grid, duck_pos = reset_level(level_index)
                                 duck_pos = new_pos
                                 break
                     elif target_tile == COLLECTIBLE:
@@ -326,9 +371,7 @@ def main():
                         if not any(COLLECTIBLE in row for row in grid):
                             level_index += 1
                             if level_index < len(LEVELS):
-                                grid = [row[:] for row in LEVELS[level_index]]
-                                duck_pos = [1, 1]
-                                timers = {}
+                                grid, duck_pos = reset_level(level_index)
                             else:
                                 display_message("You Win!", GREEN)
                                 running = False
@@ -336,11 +379,20 @@ def main():
                 grid = spread_tiles(grid)
                 update_timers(grid)
                 if not is_duck_valid(grid, duck_pos):
-                    display_message("Game Over!", RED)
-                    running = False
+                    display_message("You Died! Retrying level...", RED)
+                    grid, duck_pos = reset_level(level_index)
 
         draw_grid(grid)
-        screen.blit(DUCK_IMG, (duck_pos[0] * TILE_SIZE, duck_pos[1] * TILE_SIZE))
+
+        grid_width = len(grid[0]) * TILE_SIZE
+        grid_height = len(grid) * TILE_SIZE
+        offset_x = (SCREEN_WIDTH - grid_width) // 2
+        offset_y = (SCREEN_HEIGHT - grid_height) // 2
+
+        screen.blit(
+            DUCK_IMG,
+            (duck_pos[0] * TILE_SIZE + offset_x, duck_pos[1] * TILE_SIZE + offset_y),
+        )
 
         if immunity_moves > 0:
             font = pygame.font.Font(None, 36)
