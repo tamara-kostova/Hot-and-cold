@@ -1,21 +1,18 @@
 import pygame
 import os
 
-# Initialize Pygame
 pygame.init()
 
-# Screen dimensions
-SCREEN_WIDTH, SCREEN_HEIGHT = 800, 600
+SCREEN_WIDTH, SCREEN_HEIGHT = 1000, 800
 TILE_SIZE = 70
 
-# Colors
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
+RED = (255, 0, 0)
+GREEN = (0, 255, 0)
 
-# Game assets path
 ASSETS_DIR = "assets"
 
-# Load assets
 LAVA_IMG = pygame.image.load(os.path.join(ASSETS_DIR, "lava.png"))
 WATER_IMG = pygame.image.load(os.path.join(ASSETS_DIR, "water.png"))
 WALL_IMG = pygame.image.load(os.path.join(ASSETS_DIR, "wall.png"))
@@ -27,8 +24,10 @@ PORTAL_IMG = pygame.image.load(os.path.join(ASSETS_DIR, "portal.png"))
 COLLECTIBLE_IMG = pygame.image.load(os.path.join(ASSETS_DIR, "collectible.png"))
 IMMUNITY_IMG = pygame.image.load(os.path.join(ASSETS_DIR, "immunity.png"))
 LAVA_STOP_IMG = pygame.image.load(os.path.join(ASSETS_DIR, "lava_stop.png"))
+TIMER_IMG = pygame.image.load(
+    os.path.join(ASSETS_DIR, "timer.png")
+)
 
-# Scale assets to tile size
 LAVA_IMG = pygame.transform.scale(LAVA_IMG, (TILE_SIZE, TILE_SIZE))
 WATER_IMG = pygame.transform.scale(WATER_IMG, (TILE_SIZE, TILE_SIZE))
 WALL_IMG = pygame.transform.scale(WALL_IMG, (TILE_SIZE, TILE_SIZE))
@@ -40,16 +39,17 @@ PORTAL_IMG = pygame.transform.scale(PORTAL_IMG, (TILE_SIZE, TILE_SIZE))
 COLLECTIBLE_IMG = pygame.transform.scale(COLLECTIBLE_IMG, (TILE_SIZE, TILE_SIZE))
 IMMUNITY_IMG = pygame.transform.scale(IMMUNITY_IMG, (TILE_SIZE, TILE_SIZE))
 LAVA_STOP_IMG = pygame.transform.scale(LAVA_STOP_IMG, (TILE_SIZE, TILE_SIZE))
+TIMER_IMG = pygame.transform.scale(TIMER_IMG, (TILE_SIZE, TILE_SIZE))
 
-# Initialize screen
+
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Duck Board Game")
 
-# Clock for frame rate
+
 clock = pygame.time.Clock()
 FPS = 60
 
-# Directions
+
 DIRECTIONS = {
     "UP": (0, -1),
     "DOWN": (0, 1),
@@ -57,7 +57,7 @@ DIRECTIONS = {
     "RIGHT": (1, 0),
 }
 
-# Level configurations
+
 LEVELS = [
     [
         [3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
@@ -77,9 +77,20 @@ LEVELS = [
         [3, 0, 0, 0, 0, 0, 0, 1, 0, 7, 2, 3],
         [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
     ],
+    [
+        [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
+        [3, 0, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3],
+        [3, 0, 5, 0, 0, 0, 6, 0, 0, 10, 0, 0, 0, 3],
+        [3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3],
+        [3, 0, 0, 0, 0, 0, 0, 0, 0, 7, 0, 7, 0, 3],
+        [3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3],
+        [3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 7, 0, 3],
+        [3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3],
+        [3, 0, 0, 0, 0, 0, 0, 0, 0, 7, 7, 0, 0, 3],
+        [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
+    ],
 ]
 
-# Tile types
 EMPTY = 0
 LAVA = 1
 WATER = 2
@@ -90,8 +101,10 @@ PORTAL = 6
 COLLECTIBLE = 7
 IMMUNITY = 8
 LAVA_STOP = 9
+TIMER = 10 
+timers = {}
 
-# Draw the grid
+
 def draw_grid(grid):
     for y, row in enumerate(grid):
         for x, tile in enumerate(row):
@@ -115,8 +128,13 @@ def draw_grid(grid):
                 screen.blit(IMMUNITY_IMG, (x * TILE_SIZE, y * TILE_SIZE))
             elif tile == LAVA_STOP:
                 screen.blit(LAVA_STOP_IMG, (x * TILE_SIZE, y * TILE_SIZE))
+            elif tile == TIMER:
+                screen.blit(TIMER_IMG, (x * TILE_SIZE, y * TILE_SIZE))
+                if (x, y) in timers:
+                    font = pygame.font.Font(None, 36)
+                    text = font.render(str(timers[(x, y)]), True, BLACK)
+                    screen.blit(text, (x * TILE_SIZE + 25, y * TILE_SIZE + 25))
 
-# Spread lava and water
 def spread_tiles(grid):
     height = len(grid)
     width = len(grid[0])
@@ -140,7 +158,28 @@ def spread_tiles(grid):
                             new_grid[ny][nx] = WATER
     return new_grid
 
-# Welcome screen
+def update_timers(grid):
+    global timers
+    for y, row in enumerate(grid):
+        for x, tile in enumerate(row):
+            if tile == TIMER:
+                if (x, y) not in timers:
+                    timers[(x, y)] = 15
+                else:
+                    if grid[y][x] == BOX:
+                        continue
+                    timers[(x, y)] -= 1
+                    if timers[(x, y)] <= 0:
+                        grid[y][x] = LAVA
+                        del timers[(x, y)]
+
+def is_duck_valid(grid, duck_pos):
+    x, y = duck_pos
+    if 0 <= x < len(grid[0]) and 0 <= y < len(grid):
+        tile = grid[y][x]
+        return tile not in [LAVA, WALL]
+    return False
+
 def welcome_screen():
     screen.fill(WHITE)
     font = pygame.font.Font(None, 36)
@@ -174,11 +213,20 @@ def welcome_screen():
             if event.type == pygame.KEYDOWN:
                 waiting = False
 
-# Main game loop
+def display_message(message, color):
+    screen.fill(WHITE)
+    font = pygame.font.Font(None, 74)
+    text = font.render(message, True, color)
+    text_rect = text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2))
+    screen.blit(text, text_rect)
+    pygame.display.flip()
+    pygame.time.wait(2000) 
+
 def main():
+    global timers
     welcome_screen()
     level_index = 0
-    grid = LEVELS[level_index]
+    grid = [row[:] for row in LEVELS[level_index]]
     duck_pos = [1, 1]
     running = True
 
@@ -190,34 +238,45 @@ def main():
                 running = False
 
             if event.type == pygame.KEYDOWN:
-                new_pos = duck_pos[:]
+                dx, dy = 0, 0
                 if event.key == pygame.K_UP:
-                    new_pos[1] -= 1
+                    dy = -1
                 elif event.key == pygame.K_DOWN:
-                    new_pos[1] += 1
+                    dy = 1
                 elif event.key == pygame.K_LEFT:
-                    new_pos[0] -= 1
+                    dx = -1
                 elif event.key == pygame.K_RIGHT:
-                    new_pos[0] += 1
+                    dx = 1
 
-                # Check tile interaction
+                new_pos = [duck_pos[0] + dx, duck_pos[1] + dy]
                 if 0 <= new_pos[0] < len(grid[0]) and 0 <= new_pos[1] < len(grid):
                     target_tile = grid[new_pos[1]][new_pos[0]]
                     if target_tile == LAVA:
-                        print("Game Over! The duck stepped on lava.")
+                        display_message("Game Over!", RED)
                         running = False
-                    elif target_tile in [EMPTY, WATER, ICE, IMMUNITY, LAVA_STOP]:
+                    elif target_tile in [EMPTY, WATER, IMMUNITY, LAVA_STOP]:
                         duck_pos = new_pos
+                    elif target_tile == ICE:
+                        while True:
+                            new_pos[0] += dx
+                            new_pos[1] += dy
+                            if not (0 <= new_pos[0] < len(grid[0]) and 0 <= new_pos[1] < len(grid)):
+                                break
+                            if grid[new_pos[1]][new_pos[0]] != ICE:
+                                if grid[new_pos[1]][new_pos[0]] == LAVA:
+                                    display_message("Game Over!", RED)
+                                    running = False
+                                duck_pos = new_pos
+                                break
                     elif target_tile == COLLECTIBLE:
                         duck_pos = new_pos
                         grid[new_pos[1]][new_pos[0]] = EMPTY
                     elif target_tile == BOX:
-                        dx, dy = new_pos[0] - duck_pos[0], new_pos[1] - duck_pos[1]
                         box_new_pos = [new_pos[0] + dx, new_pos[1] + dy]
                         if (
                             0 <= box_new_pos[0] < len(grid[0])
                             and 0 <= box_new_pos[1] < len(grid)
-                            and grid[box_new_pos[1]][box_new_pos[0]] in [EMPTY, WATER, LAVA]
+                            and grid[box_new_pos[1]][box_new_pos[0]] in [EMPTY, WATER, LAVA, TIMER]
                         ):
                             grid[box_new_pos[1]][box_new_pos[0]] = BOX
                             grid[new_pos[1]][new_pos[0]] = EMPTY
@@ -226,20 +285,22 @@ def main():
                         if not any(COLLECTIBLE in row for row in grid):
                             level_index += 1
                             if level_index < len(LEVELS):
-                                grid = LEVELS[level_index]
+                                grid = [row[:] for row in LEVELS[level_index]]
                                 duck_pos = [1, 1]
+                                timers = {}
                             else:
-                                print("Congratulations, you've completed all levels!")
+                                display_message("You Win!", GREEN)
                                 running = False
 
                 grid = spread_tiles(grid)
+                update_timers(grid)
+                if not is_duck_valid(grid, duck_pos):
+                    display_message("Game Over!", RED)
+                    running = False
 
         draw_grid(grid)
-
         screen.blit(DUCK_IMG, (duck_pos[0] * TILE_SIZE, duck_pos[1] * TILE_SIZE))
-
         pygame.display.update()
-
         clock.tick(FPS)
 
 if __name__ == "__main__":
