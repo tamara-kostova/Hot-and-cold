@@ -37,6 +37,9 @@ IMMUNITY_IMG = pygame.image.load(
     os.path.join(ASSETS_DIR, "immunity.png")
 ).convert_alpha()
 TIMER_IMG = pygame.image.load(os.path.join(ASSETS_DIR, "timer.png")).convert_alpha()
+TELEPORT_IMG = pygame.image.load(
+    os.path.join(ASSETS_DIR, "teleport.png")
+).convert_alpha()
 
 LAVA_IMG = pygame.transform.scale(LAVA_IMG, (TILE_SIZE, TILE_SIZE))
 WATER_IMG = pygame.transform.scale(WATER_IMG, (TILE_SIZE, TILE_SIZE))
@@ -49,6 +52,7 @@ PORTAL_IMG = pygame.transform.scale(PORTAL_IMG, (TILE_SIZE, TILE_SIZE))
 COLLECTIBLE_IMG = pygame.transform.scale(COLLECTIBLE_IMG, (TILE_SIZE, TILE_SIZE))
 IMMUNITY_IMG = pygame.transform.scale(IMMUNITY_IMG, (TILE_SIZE, TILE_SIZE))
 TIMER_IMG = pygame.transform.scale(TIMER_IMG, (TILE_SIZE, TILE_SIZE))
+TELEPORT_IMG = pygame.transform.scale(TELEPORT_IMG, (TILE_SIZE, TILE_SIZE))
 
 clock = pygame.time.Clock()
 FPS = 60
@@ -103,6 +107,20 @@ LEVELS = [
         [3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 3],
         [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
     ],
+    [
+        [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
+        [3, 0, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3],
+        [3, 6, 11, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 11, 0, 0, 3],
+        [3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 0, 3],
+        [3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3],
+        [3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 0, 3],
+        [3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3],
+        [3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 11, 0, 0, 3],
+        [3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3],
+        [3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3],
+        [3, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3],
+        [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
+    ],
 ]
 
 
@@ -116,12 +134,20 @@ PORTAL = 6
 COLLECTIBLE = 7
 IMMUNITY = 8
 TIMER = 10
+TELEPORT = 11
 
 timers = {}
 immunity_moves = 0
 
 
 undo_stack = []
+
+
+teleporters = {
+    (2, 2): (14, 2),
+    (14, 2): (2, 2),
+    (14, 7): (2, 2),
+}
 
 
 def draw_grid(grid):
@@ -184,6 +210,10 @@ def draw_grid(grid):
                         text,
                         (x * TILE_SIZE + offset_x + 25, y * TILE_SIZE + offset_y + 25),
                     )
+            elif tile == TELEPORT:
+                screen.blit(
+                    TELEPORT_IMG, (x * TILE_SIZE + offset_x, y * TILE_SIZE + offset_y)
+                )
 
 
 def spread_tiles(grid):
@@ -396,6 +426,10 @@ def main():
                                 else:
                                     display_message("You Win!", GREEN)
                                     running = False
+
+                        elif target_tile == TELEPORT:
+                            if (new_pos[0], new_pos[1]) in teleporters:
+                                duck_pos = list(teleporters[(new_pos[0], new_pos[1])])
 
                     if grid != previous_grid or duck_pos != previous_duck_pos:
                         save_state(
