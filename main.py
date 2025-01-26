@@ -17,7 +17,7 @@ RED = (255, 0, 0)
 GREEN = (0, 255, 0)
 
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-pygame.display.set_caption("Duck Board Game")
+pygame.display.set_caption("HOT and COLD")
 
 ASSETS_DIR = "assets"
 
@@ -229,7 +229,7 @@ def welcome_screen():
     font = pygame.font.Font(None, 36)
 
     instructions = [
-        "Welcome to Duck Board Game!",
+        "Welcome to HOT and COLD!",
         "Instructions:",
         "1. Use arrow keys to move the duck.",
         "2. Collect all collectibles to unlock the portal.",
