@@ -64,7 +64,7 @@ LEVELS = [
     [
         [3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
         [3, 0, 7, 0, 0, 4, 4, 4, 0, 3],
-        [3, 0, 5, 0, 0, 0, 6, 4, 4, 3],
+        [3, 0, 0, 0, 0, 0, 6, 4, 4, 3],
         [3, 0, 0, 0, 7, 0, 0, 0, 2, 3],
         [3, 0, 0, 0, 0, 0, 0, 7, 2, 3],
         [3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
@@ -72,7 +72,7 @@ LEVELS = [
     [
         [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
         [3, 0, 7, 0, 0, 4, 4, 4, 0, 4, 0, 3],
-        [3, 0, 5, 0, 0, 0, 6, 4, 4, 4, 4, 3],
+        [3, 0, 0, 0, 0, 0, 6, 4, 4, 4, 4, 3],
         [3, 0, 0, 0, 0, 0, 0, 0, 2, 0, 2, 3],
         [3, 0, 0, 0, 0, 0, 0, 0, 2, 7, 2, 3],
         [3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 3],
@@ -294,16 +294,22 @@ def reset_level(level_index):
     return grid, duck_pos
 
 
-def save_state(grid, duck_pos):
+def save_state(grid, duck_pos, immunity_moves, timers):
     global undo_stack
-
-    undo_stack.append(([row[:] for row in grid], [duck_pos[0], duck_pos[1]]))
+    undo_stack.append(
+        (
+            [row[:] for row in grid],
+            [duck_pos[0], duck_pos[1]],
+            immunity_moves,
+            timers.copy(),
+        )
+    )
 
 
 def undo_move():
-    global grid, duck_pos, undo_stack
+    global grid, duck_pos, immunity_moves, timers, undo_stack
     if undo_stack:
-        grid, duck_pos = undo_stack.pop()
+        grid, duck_pos, immunity_moves, timers = undo_stack.pop()
 
 
 def main():
@@ -335,6 +341,8 @@ def main():
 
                     previous_grid = [row[:] for row in grid]
                     previous_duck_pos = [duck_pos[0], duck_pos[1]]
+                    previous_immunity_moves = immunity_moves
+                    previous_timers = timers.copy()
 
                     new_pos = [duck_pos[0] + dx, duck_pos[1] + dy]
                     if 0 <= new_pos[0] < len(grid[0]) and 0 <= new_pos[1] < len(grid):
@@ -345,7 +353,7 @@ def main():
                         elif target_tile in [EMPTY, WATER, IMMUNITY]:
                             duck_pos = new_pos
                             if target_tile == IMMUNITY:
-                                immunity_moves = random.randint(3, 7)
+                                immunity_moves = random.randint(6, 10)
                                 grid[new_pos[1]][new_pos[0]] = EMPTY
                         elif target_tile in [EMPTY, WATER, IMMUNITY] or (
                             target_tile == LAVA and immunity_moves > 0
@@ -390,7 +398,12 @@ def main():
                                     running = False
 
                     if grid != previous_grid or duck_pos != previous_duck_pos:
-                        save_state(previous_grid, previous_duck_pos)
+                        save_state(
+                            previous_grid,
+                            previous_duck_pos,
+                            previous_immunity_moves,
+                            previous_timers,
+                        )
                         grid = spread_tiles(grid)
 
                     update_timers(grid)
