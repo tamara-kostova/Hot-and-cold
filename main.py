@@ -243,11 +243,14 @@ def welcome_screen():
         "Press any key to start.",
     ]
 
-    y_offset = 100
-    for line in instructions:
+    total_height = len(instructions) * 40
+    start_y = (SCREEN_HEIGHT - total_height) // 2
+
+    for i, line in enumerate(instructions):
         text = font.render(line, True, BLACK)
-        screen.blit(text, (50, y_offset))
-        y_offset += 40
+        
+        text_rect = text.get_rect(center=(SCREEN_WIDTH // 2, start_y + i * 40))
+        screen.blit(text, text_rect)
 
     pygame.display.flip()
 
