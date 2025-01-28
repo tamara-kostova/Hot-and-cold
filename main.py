@@ -297,11 +297,20 @@ def undo_move():
         grid, duck_pos, immunity_moves, timers = undo_stack.pop()
 
 
+def draw_level_number(level_number):
+    font = pygame.font.Font(None, 50)
+    text = font.render(f"Level: {level_number}", True, BLACK)
+    screen.blit(text, (10, 10))
+
+
 def main():
     global grid, duck_pos, timers, immunity_moves, undo_stack
     welcome_screen()
     level_index = 0
     grid, duck_pos = reset_level(level_index)
+
+    level_font = pygame.font.Font(None, 36)
+
     running = True
 
     while running:
@@ -411,6 +420,9 @@ def main():
             DUCK_IMG,
             (duck_pos[0] * TILE_SIZE + offset_x, duck_pos[1] * TILE_SIZE + offset_y),
         )
+
+        level_text = level_font.render(f"Level: {level_index + 1}", True, WHITE)
+        screen.blit(level_text, (10, 10))
 
         if immunity_moves > 0:
             font = pygame.font.Font(None, 36)
