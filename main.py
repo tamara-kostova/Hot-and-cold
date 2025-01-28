@@ -451,7 +451,7 @@ def main():
         screen.blit(level_text, (10, 10))
 
         for i in range(lives):
-            screen.blit(HEART_IMG, (i * 50, 50))
+            screen.blit(HEART_IMG, (SCREEN_WIDTH - 200 + i * 50, 50))
 
         if immunity_moves > 0:
             font = pygame.font.Font(None, 36)
