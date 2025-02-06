@@ -56,6 +56,13 @@ TIMER_IMG = pygame.transform.scale(TIMER_IMG, (TILE_SIZE, TILE_SIZE))
 TELEPORT_IMG = pygame.transform.scale(TELEPORT_IMG, (TILE_SIZE, TILE_SIZE))
 HEART_IMG = pygame.transform.scale(HEART_IMG, (TILE_SIZE * 1.5, TILE_SIZE))
 
+def load_sound(filename):
+    return pygame.mixer.Sound(os.path.join(ASSETS_DIR, filename))
+
+COLLECT_SOUND = load_sound("collect.wav")
+LOSE_SOUND = load_sound("lose.wav")
+WIN_SOUND = load_sound("win.wav")
+
 clock = pygame.time.Clock()
 FPS = 60
 
@@ -394,6 +401,7 @@ def main():
                             target_tile = grid[new_pos[1]][new_pos[0]]
                             if target_tile == LAVA and immunity_moves == 0:
                                 lives -= 1
+                                LOSE_SOUND.play()
                                 if lives <= 0:
                                     display_message(
                                         "Game Over! Back to Level 1...", RED
@@ -408,6 +416,7 @@ def main():
                             elif target_tile in [EMPTY, WATER, IMMUNITY]:
                                 duck_pos = new_pos
                                 if target_tile == IMMUNITY:
+                                    COLLECT_SOUND.play()
                                     immunity_moves = random.randint(7, 11)
                                     grid[new_pos[1]][new_pos[0]] = EMPTY
                             elif target_tile in [EMPTY, WATER, IMMUNITY] or (
@@ -426,6 +435,7 @@ def main():
                                     if grid[new_pos[1]][new_pos[0]] != ICE:
                                         if grid[new_pos[1]][new_pos[0]] == LAVA:
                                             lives -= 1
+                                            LOSE_SOUND.play()
                                             if lives <= 0:
                                                 display_message(
                                                     "Game Over! Back to Level 1...", RED
@@ -442,6 +452,7 @@ def main():
                                         break
                             elif target_tile == COLLECTIBLE:
                                 duck_pos = new_pos
+                                COLLECT_SOUND.play()
                                 grid[new_pos[1]][new_pos[0]] = EMPTY
                             elif target_tile == BOX:
                                 box_new_pos = [new_pos[0] + dx, new_pos[1] + dy]
@@ -461,6 +472,7 @@ def main():
                                     if level_index < len(LEVELS):
                                         grid, duck_pos = reset_level(level_index)
                                     else:
+                                        WIN_SOUND.play()
                                         display_message("You Win!", GREEN)
                                         playing = victory_screen()
                                         running = False
@@ -484,6 +496,7 @@ def main():
                         update_timers(grid)
                         if not is_duck_valid(grid, duck_pos):
                             lives -= 1
+                            LOSE_SOUND.play()
                             if lives <= 0:
                                 display_message("Game Over! Back to Level 1...", RED)
                                 level_index = 0
